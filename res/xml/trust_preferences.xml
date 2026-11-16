@@ -64,6 +64,6 @@
         <SwitchPreferenceCompat
             android:key="trust_warning_keys"
             android:summary="@string/trust_warnings_keys"
-            android:defaultValue="true" />
+            android:defaultValue="false" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -94,7 +94,7 @@ public class TrustPreferences extends SettingsPreferenceFragment {
         setupEncryption(encryptLevel);
 
         int currentFeatures = LineageSettings.Secure.getInt(getContext().getContentResolver(),
-                LineageSettings.Secure.TRUST_WARNINGS, TrustInterface.TRUST_WARN_MAX_VALUE);
+                LineageSettings.Secure.TRUST_WARNINGS, TrustInterface.TRUST_WARN_SELINUX);
         mWarnSELinuxPref.setChecked((currentFeatures & TrustInterface.TRUST_WARN_SELINUX) != 0);
         mWarnKeysPref.setChecked((currentFeatures & TrustInterface.TRUST_WARN_PUBLIC_KEY) != 0);
 
