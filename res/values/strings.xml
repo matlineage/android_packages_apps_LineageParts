@@ -460,6 +460,8 @@
     <string name="status_bar_icons_title">Status bar icons</string>
     <string name="status_bar_system_icons_title">System icons</string>
     <string name="status_bar_system_icons_summary">Control which status bar icons are shown</string>
+    <string name="status_bar_colored_icons_title">Colored icons</string>
+    <string name="status_bar_colored_icons_summary">Show colored notification icons in status bar</string>
 
     <!-- Status bar - Clock -->
     <string name="status_bar_clock_title">Clock</string>
