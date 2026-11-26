@@ -100,4 +100,9 @@
           android:title="@string/live_display_color_profile_title"
           android:fragment="org.lineageos.lineageparts.livedisplay.ColorProfileFragment"
           lineage:xmlRes="@xml/color_profile_settings" />
+
+    <part android:key="font_settings"
+          android:title="@string/font_settings_title"
+          android:fragment="org.lineageos.lineageparts.style.FontSettings"
+          lineage:xmlRes="@xml/font_settings" />
 </parts-catalog>

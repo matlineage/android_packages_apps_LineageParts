@@ -696,4 +696,22 @@
     <string name="sms_security_check_limit_summary">Apps can send %s messages in 1 minute before requiring confirmation</string>
     <string name="sms_security_check_limit_summary_none">Apps are not allowed to send any messages without confirmation</string>
     <string name="sms_security_check_limit_always_confirm">Always confirm</string>
+
+    <!-- Font settings -->
+    <string name="font_settings_title">Font</string>
+    <string name="font_prebuilt_title">Prebuilt fonts</string>
+    <string name="font_prebuilt_default">Default</string>
+    <string name="font_prebuilt_applied">Font applied</string>
+    <string name="custom_font_picker_title">Import custom font</string>
+    <string name="custom_font_picker_summary">Pick a TTF or OTF font file to use system-wide</string>
+    <string name="custom_font_installed_title">Custom font</string>
+    <string name="custom_font_installed_summary">Currently installed: %1$s</string>
+    <string name="custom_font_installed_success">Font installed successfully. Reboot to apply.</string>
+    <string name="custom_font_install_failed">Failed to install font</string>
+    <string name="reset_custom_font_title">Reset custom font</string>
+    <string name="reset_custom_font_summary">Remove custom font and return to default</string>
+    <string name="custom_font_reset_success">Custom font reset. Reboot to apply.</string>
+    <string name="reboot_required_title">Reboot required</string>
+    <string name="reboot_required_custom_font_desc">A reboot is required for the font change to take full effect.</string>
+    <string name="reboot_device">Reboot</string>
 </resources>
