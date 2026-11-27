@@ -9,6 +9,11 @@
     android:key="font_settings"
     android:title="@string/font_settings_title">
 
+    <com.android.settingslib.widget.LayoutPreference
+        android:key="font_preview"
+        android:layout="@layout/font_preview"
+        android:selectable="false" />
+
     <Preference
         android:key="font_prebuilt"
         android:title="@string/font_prebuilt_title"
@@ -30,8 +35,8 @@
         android:summary="@string/reset_custom_font_summary" />
 
     <Preference
-        android:key="reboot_for_font"
-        android:title="@string/reboot_device"
-        android:summary="@string/reboot_required_custom_font_desc" />
+        android:key="restart_apps"
+        android:title="@string/restart_apps_title"
+        android:summary="@string/restart_apps_summary" />
 
 </PreferenceScreen>

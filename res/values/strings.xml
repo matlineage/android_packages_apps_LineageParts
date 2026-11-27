@@ -706,12 +706,12 @@
     <string name="custom_font_picker_summary">Pick a TTF or OTF font file to use system-wide</string>
     <string name="custom_font_installed_title">Custom font</string>
     <string name="custom_font_installed_summary">Currently installed: %1$s</string>
-    <string name="custom_font_installed_success">Font installed successfully. Reboot to apply.</string>
+    <string name="custom_font_installed_success">Font installed successfully. Restart apps to apply.</string>
     <string name="custom_font_install_failed">Failed to install font</string>
     <string name="reset_custom_font_title">Reset custom font</string>
     <string name="reset_custom_font_summary">Remove custom font and return to default</string>
-    <string name="custom_font_reset_success">Custom font reset. Reboot to apply.</string>
-    <string name="reboot_required_title">Reboot required</string>
-    <string name="reboot_required_custom_font_desc">A reboot is required for the font change to take full effect.</string>
-    <string name="reboot_device">Reboot</string>
+    <string name="custom_font_reset_success">Custom font reset. Restart apps to apply.</string>
+    <string name="restart_apps_title">Restart apps</string>
+    <string name="restart_apps_summary">Restart all apps to apply font change (only necessary for TTF/OTF import)</string>
+    <string name="restart_apps_toast">Restarting apps</string>
 </resources>

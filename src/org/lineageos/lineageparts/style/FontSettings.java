@@ -6,6 +6,9 @@
 package org.lineageos.lineageparts.style;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.om.IOverlayManager;
@@ -51,7 +54,7 @@ public class FontSettings extends SettingsPreferenceFragment implements
     private static final String KEY_CUSTOM_FONT_PICKER = "custom_font_picker";
     private static final String KEY_CUSTOM_FONT_INFO = "custom_font_info";
     private static final String KEY_RESET_CUSTOM_FONT = "reset_custom_font";
-    private static final String KEY_REBOOT_FOR_FONT = "reboot_for_font";
+    private static final String KEY_RESTART_APPS = "restart_apps";
     private static final String OVERLAY_CATEGORY_FONT = "android.theme.customization.font";
     private static final String DEFAULT_FONT_PKG = "com.android.theme.font.googlesansflex";
     private static final int REQUEST_PICK_FONT = 1001;
@@ -60,7 +63,7 @@ public class FontSettings extends SettingsPreferenceFragment implements
     private Preference mCustomFontPickerPref;
     private Preference mCustomFontInfoPref;
     private Preference mResetCustomFontPref;
-    private Preference mRebootForFontPref;
+    private Preference mRestartAppsPref;
     private ExternalFontInstaller mFontInstaller;
     private IOverlayManager mOverlayManager;
     private final List<String> mFontPackages = new ArrayList<>();
@@ -85,8 +88,8 @@ public class FontSettings extends SettingsPreferenceFragment implements
         mCustomFontInfoPref = findPreference(KEY_CUSTOM_FONT_INFO);
         mResetCustomFontPref = findPreference(KEY_RESET_CUSTOM_FONT);
         mResetCustomFontPref.setOnPreferenceClickListener(this);
-        mRebootForFontPref = findPreference(KEY_REBOOT_FOR_FONT);
-        mRebootForFontPref.setOnPreferenceClickListener(this);
+        mRestartAppsPref = findPreference(KEY_RESTART_APPS);
+        mRestartAppsPref.setOnPreferenceClickListener(this);
 
         refreshPrebuiltFonts();
         updateFontPreferences();
@@ -97,6 +100,10 @@ public class FontSettings extends SettingsPreferenceFragment implements
         super.onResume();
         refreshPrebuiltFonts();
         updateFontPreferences();
+        final View view = getView();
+        if (view != null) {
+            view.post(this::updateFontPreview);
+        }
     }
 
     private void refreshPrebuiltFonts() {
@@ -172,7 +179,6 @@ public class FontSettings extends SettingsPreferenceFragment implements
         final boolean hasCustomFont = customFontName != null && !customFontName.isEmpty();
         mCustomFontInfoPref.setVisible(hasCustomFont);
         mResetCustomFontPref.setVisible(hasCustomFont);
-        mRebootForFontPref.setVisible(hasCustomFont);
 
         if (hasCustomFont) {
             mCustomFontInfoPref.setSummary(
@@ -220,7 +226,8 @@ public class FontSettings extends SettingsPreferenceFragment implements
                     updateFontPreferences();
                     Toast.makeText(context, R.string.custom_font_installed_success,
                             Toast.LENGTH_SHORT).show();
-                    showRebootDialog();
+                    final View v = getView();
+                    if (v != null) v.post(FontSettings.this::updateFontPreview);
                 } else {
                     Toast.makeText(context, R.string.custom_font_install_failed,
                             Toast.LENGTH_SHORT).show();
@@ -253,20 +260,69 @@ public class FontSettings extends SettingsPreferenceFragment implements
         clearCustomFontInternal();
         refreshPrebuiltFonts();
         Toast.makeText(getContext(), R.string.custom_font_reset_success, Toast.LENGTH_SHORT).show();
-        showRebootDialog();
+        final View v = getView();
+        if (v != null) v.post(this::updateFontPreview);
     }
 
-    private void showRebootDialog() {
+    private void restartApps() {
         final Context context = getContext();
         if (context == null) return;
-        new AlertDialog.Builder(context)
-                .setTitle(R.string.reboot_required_title)
-                .setMessage(R.string.reboot_required_custom_font_desc)
-                .setPositiveButton(R.string.reboot_device, (dialog, which) -> {
-                    ExternalFontInstaller.rebootDevice(context);
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        try {
+            ActivityManager am = context.getSystemService(ActivityManager.class);
+            final int userId = UserHandle.USER_CURRENT;
+            final String self = context.getPackageName();
+            final java.util.Set<String> widgetPkgs = new java.util.HashSet<>();
+            try {
+                AppWidgetManager awm = context.getSystemService(AppWidgetManager.class);
+                if (awm != null) {
+                    for (AppWidgetProviderInfo info : awm.getInstalledProviders()) {
+                        if (info != null && info.provider != null) {
+                            widgetPkgs.add(info.provider.getPackageName());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to query widget providers", e);
+            }
+            if (am != null) {
+                try {
+                    ActivityManager.getService().killAllBackgroundProcesses();
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to kill background processes", e);
+                }
+                for (ActivityManager.RunningAppProcessInfo proc : am.getRunningAppProcesses()) {
+                    if (proc == null || proc.processName == null) continue;
+                    if ("android".equals(proc.processName) || self.equals(proc.processName)) {
+                        continue;
+                    }
+                    boolean isSystemUi = "com.android.systemui".equals(proc.processName);
+                    if (isSystemUi) {
+                        try {
+                            ActivityManager.getService().killApplicationProcess(
+                                    proc.processName, proc.uid);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to kill SystemUI process", e);
+                        }
+                        continue;
+                    }
+                    if (proc.pkgList != null) {
+                        for (String pkg : proc.pkgList) {
+                            if (pkg == null || self.equals(pkg) || widgetPkgs.contains(pkg)) {
+                                continue;
+                            }
+                            try {
+                                ActivityManager.getService().forceStopPackage(pkg, userId);
+                            } catch (Exception e) {
+                                Log.w(TAG, "Failed to force stop " + pkg, e);
+                            }
+                        }
+                    }
+                }
+            }
+            Toast.makeText(context, R.string.restart_apps_toast, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to restart apps", e);
+        }
     }
 
     private boolean applyPrebuiltFont(String packageName) {
@@ -328,7 +384,17 @@ public class FontSettings extends SettingsPreferenceFragment implements
             Resources res = pm.getResourcesForApplication(pkg);
             int id = res.getIdentifier("config_bodyFontFamily", "string", pkg);
             if (id != 0) {
-                return Typeface.create(res.getString(id), Typeface.NORMAL);
+                String family = res.getString(id);
+                try {
+                    java.lang.reflect.Method m = Typeface.class.getDeclaredMethod(
+                            "getSystemDefaultTypeface", String.class);
+                    Typeface tf = (Typeface) m.invoke(null, family);
+                    if (tf != null && tf != Typeface.DEFAULT) {
+                        return tf;
+                    }
+                } catch (Exception ignored) {
+                }
+                return Typeface.create(family, Typeface.NORMAL);
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to load typeface for " + pkg, e);
@@ -364,11 +430,50 @@ public class FontSettings extends SettingsPreferenceFragment implements
                         mSelectedFontPkg = pkg;
                         mPrebuiltFontPref.setSummary(mFontLabels.get(which));
                         Toast.makeText(context, R.string.font_prebuilt_applied, Toast.LENGTH_SHORT).show();
+                        final View v = getView();
+                        if (v != null) v.post(this::updateFontPreview);
                     }
                     dialog.dismiss();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
+    }
+
+    private void updateFontPreview() {
+        final View view = getView();
+        if (view == null) return;
+        TextView upper = view.findViewById(R.id.font_preview_uppercase);
+        TextView lower = view.findViewById(R.id.font_preview_lowercase);
+        TextView numbers = view.findViewById(R.id.font_preview_numbers);
+        if (upper == null || lower == null || numbers == null) return;
+
+        Typeface tf = Typeface.DEFAULT;
+        try {
+            final String customFontName = Settings.Secure.getStringForUser(
+                    getContext().getContentResolver(),
+                    "custom_font_name",
+                    UserHandle.USER_CURRENT);
+            if (customFontName != null && !customFontName.isEmpty()) {
+                java.io.File customFont = new java.io.File(getContext().getCacheDir(), "cust_font.ttf");
+                if (customFont.exists()) {
+                    tf = Typeface.createFromFile(customFont);
+                } else {
+                    tf = Typeface.create(customFontName, Typeface.NORMAL);
+                }
+            } else {
+                int id = Resources.getSystem().getIdentifier(
+                        "config_bodyFontFamily", "string", "android");
+                if (id != 0) {
+                    String family = Resources.getSystem().getString(id);
+                    tf = Typeface.create(family, Typeface.NORMAL);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to resolve preview font", e);
+        }
+        upper.setTypeface(tf);
+        lower.setTypeface(tf);
+        numbers.setTypeface(tf);
     }
 
     @Override
@@ -388,8 +493,8 @@ public class FontSettings extends SettingsPreferenceFragment implements
         } else if (KEY_RESET_CUSTOM_FONT.equals(key)) {
             resetCustomFont();
             return true;
-        } else if (KEY_REBOOT_FOR_FONT.equals(key)) {
-            showRebootDialog();
+        } else if (KEY_RESTART_APPS.equals(key)) {
+            restartApps();
             return true;
         }
         return false;

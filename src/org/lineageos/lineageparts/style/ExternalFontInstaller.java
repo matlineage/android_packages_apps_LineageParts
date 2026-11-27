@@ -23,7 +23,7 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Log;
 
-import com.android.internal.statusbar.IStatusBarService;
+
 
 import org.json.JSONObject;
 
@@ -50,16 +50,6 @@ public class ExternalFontInstaller {
     public ExternalFontInstaller(Context context) {
         mContext = context;
         mFontManager = context.getSystemService(FontManager.class);
-    }
-
-    public static void rebootDevice(Context context) {
-        try {
-            android.os.IBinder binder = ServiceManager.getService("statusbar");
-            IStatusBarService statusBarService = IStatusBarService.Stub.asInterface(binder);
-            statusBarService.reboot(false, "system_font_change");
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to reboot device via statusbar service", e);
-        }
     }
 
     public Typeface loadTypefaceFromUri(Context context, Uri uri) {
@@ -221,7 +211,7 @@ public class ExternalFontInstaller {
         try {
             mFontManager.clearUpdates();
         } catch (Exception e) {
-            Log.w(TAG, "Failed to clear font updates, reboot may be required", e);
+            Log.w(TAG, "Failed to clear font updates, restart apps may be required", e);
         }
         cleanupPreviewFont(context);
     }
